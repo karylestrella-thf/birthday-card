@@ -306,19 +306,31 @@
     const a=document.createElement('a');a.href=url;a.download='birthday-reviews.json';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
   });
 
-  document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
-  document.getElementById('fileInput').addEventListener('change',async e=>{
-    const f=e.target.files[0];if(!f)return;
-    try{
-      const text=await f.text();const imported=JSON.parse(text);
-      if(!Array.isArray(imported))throw new Error('Invalid file format');
-      const existing=loadReviews();
-      const merged=existing.concat(imported.map(it=>({id:it.id||uid(),rating:it.rating||5,name:it.name||'Anon',title:it.title||'',message:it.message||'',date:it.date||new Date().toISOString()})));
-      saveReviews(merged);
-      alert('Imported '+imported.length+' reviews (merged).');
-    }catch(err){alert('Import failed: '+err.message)}
-    e.target.value='';
-  });
+ document.getElementById('saveReview').addEventListener('click', () => {
+  const rating = parseInt(document.getElementById('rating').value, 10);
+  const name = document.getElementById('name').value.trim() || 'Anon';
+  const title = document.getElementById('title').value.trim();
+  const message = document.getElementById('message').value.trim();
+  if (!message) { alert('Please write a message'); return }
+
+  const reviews = loadReviews();
+  const id = uid();  // new ID for this review
+
+  // If a review by the same person already exists, replace it instead of duplicating
+  const idx = reviews.findIndex(r => r.name === name);
+  const newReview = { id, rating, name, title, message, date: new Date().toISOString() };
+
+  if (idx >= 0) {
+    reviews[idx] = newReview;   // overwrite existing
+  } else {
+    reviews.push(newReview);    // add new
+  }
+
+  saveReviews(reviews);
+  closeModal();
+  clearForm();
+});
+
 
   function encodeReviewsToHash(){
     const data=loadReviews();
